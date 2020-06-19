@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-typedef unsigned int IUINT32;
+#include "Render.h"
 
 //=====================================================================
 // Win32 窗口及图形绘制：为 device 提供一个 DibSection 的 FB
@@ -161,51 +161,6 @@ void screen_update(void)
     screen_dispatch();
 }
 
-//=====================================================================
-// device
-//=====================================================================
-typedef struct
-{
-    int width;             // 窗口宽度
-    int height;            // 窗口高度
-    IUINT32 **framebuffer; // 像素缓存：framebuffer[y] 代表第 y行
-    IUINT32 background;    // 背景色
-} device_t;
-
-void device_init(device_t *device, int width, int height, void *fb)
-{
-    device->width = width;
-    device->height = height;
-    device->background = 0xc0c0c0;
-
-    int need = width * height * 4; // 颜色缓冲区字节数，每个像素四种颜色 rgba, 每种颜色 0~255
-    char *ptr = (char *)malloc(need);
-    device->framebuffer = (IUINT32 **)ptr;
-
-    char *framebuf = (char *)fb;
-
-    for (int j = 0; j < height; j++)
-    {
-        device->framebuffer[j] = (IUINT32 *)(framebuf + width * 4 * j);
-    }
-}
-
-void device_clear(device_t *device)
-{
-    int y, x, height = device->height;
-
-    // clear frame-buffer
-    for (y = 0; y < device->height; y++)
-    {
-        IUINT32 *dst = device->framebuffer[y];
-        // IUINT32 cc = (height - 1 - y) * 230 / (height - 1); // lx?: 230 ?
-        // cc = (cc << 16) | (cc << 8) | cc;
-        // if (mode == 0)
-        IUINT32 cc = device->background;
-        for (x = device->width; x > 0; dst++, x--) // why dst++ x--
-            dst[0] = cc;
-    }
-}
 
 //=====================================================================
 // main
@@ -216,16 +171,18 @@ int main()
     std::cout << "hello world" << std ::endl;
 
     TCHAR *title = _T("LXRender");
-    screen_init(800, 600, title);
+    screen_init(SCREEN_WIDTH, SCREEN_HEIGHT, title);
 
-    device_t device;
-    device_init(&device, SCREEN_WIDTH, SCREEN_HEIGHT, screen_fb);
-    device_clear(&device);
-    
+    Render render = Render(SCREEN_WIDTH, SCREEN_HEIGHT, screen_fb);
+    render.Clear();
+
     while (screen_exit == 0 && screen_keys[VK_ESCAPE] == 0)
     {
         screen_update();
     }
-    
+
     return 0;
 }
+
+
+

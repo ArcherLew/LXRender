@@ -11,9 +11,9 @@
             "command": "g++", // 要使用的编译器，C++用g++
             "type": "shell", // process是vsc把预定义变量和转义解析后直接全部传给command；shell相当于先打开shell再输入命令，所以args还会经过shell再解析一遍
             "args": [
-                "${workspaceFolder}/main.cpp", //需要编译的文件
+                "${workspaceFolder}/Main.cpp", //需要编译的文件
                 "-o", // 指定输出文件名，不加该参数则默认输出a.exe，Linux下默认a.out
-                "${workspaceFolder}/main.exe",  //输出程序的绝对路径
+                "${workspaceFolder}/Main.exe",  //输出程序的绝对路径
                 "-LC:\\LLVM\\x86_64-w64-mingw32\\lib",
                 "-lgdi32",
                 "-g", // 生成和调试有关的信息
