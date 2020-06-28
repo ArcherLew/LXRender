@@ -161,10 +161,14 @@ void screen_update(void)
     screen_dispatch();
 }
 
-
 //=====================================================================
 // main
 //=====================================================================
+
+void TestDrawPixel(Render *render);
+void TestDrawLine(Render *render);
+void TestDrawScanline(Render *render);
+void TestDrawTriangle2D(Render *render);
 
 int main()
 {
@@ -176,6 +180,11 @@ int main()
     Render render = Render(SCREEN_WIDTH, SCREEN_HEIGHT, screen_fb);
     render.Clear();
 
+    // TestDrawPixel(&render);
+    // TestDrawScanline(&render);
+    // TestDrawLine(&render);
+    TestDrawTriangle2D(&render);
+
     while (screen_exit == 0 && screen_keys[VK_ESCAPE] == 0)
     {
         screen_update();
@@ -184,5 +193,40 @@ int main()
     return 0;
 }
 
+void TestDrawPixel(Render *render)
+{
+    int x, y;
+    Color color = Color(1.0f, 0, 0, 1.0f);
+    IUINT32 c = color.ToInt32();
 
+    for (x = 1; x < 100; x++)
+        for (y = 1; y < 100; y++)
+            render->DrawPixel(x, y, c);
+}
 
+void TestDrawLine(Render *render)
+{
+    Color color = Color(0, 1.0f, 0, 1.0f);
+    render->DrawLine(10, 10, 500, 400, color.ToInt32());
+}
+
+void TestDrawScanline(Render *render)
+{
+    Vertex step = Vertex(Point(1, 0, 0, 1), Color(-0.005f, 0, 0, 0), 1);
+
+    int y;
+    for (y = 1; y < 100; y++)
+    {
+        Vertex v = Vertex(Point(100, y, 0, 1), Color(1.0f, 0, 0, 1), 1);
+        Scanline scanline = Scanline(v, step, 100, y, 200);
+        render->DrawScanLine(&scanline);
+    }
+}
+
+void TestDrawTriangle2D(Render *render)
+{
+    Vertex v1 = Vertex(Point(400, 100, 0, 1), Color(1.0f, 0, 0, 1), 1);
+    Vertex v2 = Vertex(Point(160, 500, 0, 1), Color(0, 1.0f, 0, 1), 1);
+    Vertex v3 = Vertex(Point(640, 500, 0, 1), Color(0, 0, 1.0f, 1), 1);
+    render->DrawTriangle2D(&v1, &v2, &v3);
+}
