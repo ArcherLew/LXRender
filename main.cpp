@@ -169,6 +169,7 @@ void TestDrawPixel(Render *render);
 void TestDrawLine(Render *render);
 void TestDrawScanline(Render *render);
 void TestDrawTriangle2D(Render *render);
+void TestDrawObject(Render *render);
 
 int main()
 {
@@ -183,7 +184,8 @@ int main()
     // TestDrawPixel(&render);
     // TestDrawScanline(&render);
     // TestDrawLine(&render);
-    TestDrawTriangle2D(&render);
+    // TestDrawTriangle2D(&render);
+    TestDrawObject(&render);
 
     while (screen_exit == 0 && screen_keys[VK_ESCAPE] == 0)
     {
@@ -229,4 +231,20 @@ void TestDrawTriangle2D(Render *render)
     Vertex v2 = Vertex(Point(160, 500, 0, 1), Color(0, 1.0f, 0, 1), 1);
     Vertex v3 = Vertex(Point(640, 500, 0, 1), Color(0, 0, 1.0f, 1), 1);
     render->DrawTriangle2D(&v1, &v2, &v3);
+}
+
+void TestDrawObject(Render *render)
+{
+    Transform transform = Transform();
+
+    // 1, -1, 1, 1 - 1, -1, 1, 1 - 1, 1, 1, 1 1, 1, 1, 1 1, -1, -1, 1 - 1, -1, -1, 1 - 1, 1, -1, 1 1, 1, -1, 1
+    float *data = new float[18]{
+        0.0f, 0.866f, 0.0f, 1.0f, 0.0f, 0.0f,
+        1.0f, -0.866f, 0.0f, 0.0f, 1.0f, 0.0f,
+        -1.0f, -0.866f, 0.0f, 0.0f, 0.0f, 1.0f};
+    std::cout << "data" << sizeof(data) << std::endl;
+    int *triangles = new int[3]{0, 1, 2};
+    Object obj = Object(data, 18, 3, triangles, 1, transform);
+
+    render->DrawObject(&obj);
 }

@@ -1,4 +1,4 @@
-#include "Math.h"
+#include "Math/Math.h"
 
 #ifndef COMMON_H
 #define COMMON_H
@@ -21,33 +21,41 @@ typedef struct Color
 
     Color(float _r, float _g, float _b, float _a) : r(_r), g(_g), b(_b), a(_a) {}
 
-    void Add(Color *c)
+    Color &operator+=(Color &c)
     {
-        r += c->r;
-        g += c->g;
-        b += c->b;
-        a += c->a;
+        r += c.r;
+        g += c.g;
+        b += c.b;
+        a += c.a;
+        return *this;
     }
 
-    void Sub(Color *c)
+    Color &operator-=(Color &c)
     {
-        r -= c->r;
-        g -= c->g;
-        b -= c->b;
-        a -= c->a;
+        r -= c.r;
+        g -= c.g;
+        b -= c.b;
+        a -= c.a;
+        return *this;
     }
 
-    void Mul(float m)
+    Color &operator*=(float m)
     {
         r *= m;
         g *= m;
         b *= m;
         a *= m;
+        return *this;
     }
 
-    void Div(float d)
+    Color operator*(float m)
     {
-        Mul(1 / d);
+        Color c;
+        c.r = this->r *= m;
+        c.g = this->g *= m;
+        c.b = this->b *= m;
+        c.a = this->a *= m;
+        return c;
     }
 
     IUINT32 ToInt32()
@@ -71,13 +79,13 @@ typedef struct Color
 
 } Color;
 
-typedef Vector Point;
-
 typedef struct Vertex
 {
     Point pos;
     Color color;
     float rhw;
+
+    // Point wPos;
 
     Vertex(){};
 
@@ -85,24 +93,46 @@ typedef struct Vertex
 
     void Add(Vertex *v)
     {
-        pos.Add(&v->pos);
-        color.Add(&v->color);
+        pos += v->pos;
+        color += v->color;
         rhw += v->rhw;
+
+        // wPos += v->wPos;
     }
 
     void Sub(Vertex *v)
     {
-        pos.Sub(&v->pos);
-        color.Sub(&v->color);
+        pos -= v->pos;
+        color -= v->color;
         rhw -= v->rhw;
+
+        // wPos -= v->wPos;
     }
 
     void Div(float d)
     {
         float inv = 1 / d;
-        pos.Mul(inv);
-        color.Mul(inv);
+        pos *= inv;
+        color *= inv;
         rhw *= inv;
+
+        // wPos *= inv;
+    }
+
+    void ApplyRhw()
+    {
+        rhw = 1.0f / pos.w;
+        // tc.u *= rhw;
+        // tc.v *= rhw;
+        color *= rhw;
+
+        // wPos *= rhw;
+    }
+
+    void RevertRhw(Vertex *v)
+    {
+        v->color = color * pos.w;
+        // v->wPos = wPos * pos.w;
     }
 
     static void Interpolate(Vertex *v, Vertex *v1, Vertex *v2, float t)

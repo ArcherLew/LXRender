@@ -1,6 +1,9 @@
 #include <stdlib.h>
 
+#include "Camera.h"
 #include "Common.h"
+#include "Math/Math.h"
+#include "Object.h"
 
 // #ifndef GLM_H
 // #define GLM_H
@@ -25,12 +28,14 @@ class Render
 
 private:
     Device device;
+    Camera camera;
 
 public:
     Render() {}
 
     Render(int width, int height, void *fb)
     {
+        // init device
         device.width = width;
         device.height = height;
         device.background = 0x000000;
@@ -45,6 +50,13 @@ public:
         {
             device.framebuffer[j] = (IUINT32 *)(framebuf + width * 4 * j);
         }
+
+        // init camera
+        Vector camPos = {0.0f, 0.0f, -1.0f, 1.0f};
+        Vector lookAt = {0.0f, 0.0f, 1.0f, 0.0f};
+        Vector up = {0.0f, 1.0f, 0.0f, 0.0f};
+        float fov = Math::PI * 0.5f;
+        camera.Init(&camPos, &lookAt, &up, fov, (float)width, (float)height, 1.0f, 500.0f);
     }
 
     void Clear()
@@ -143,11 +155,14 @@ public:
         int w = scanline->w;
         int width = device.width;
 
+        Vertex v;
+
         for (int i = 0; x < width; x++, i++)
         {
             if (x >= 0 && i < w)
             {
-                IUINT32 cc = scanline->v.color.ToInt32();
+                scanline->v.RevertRhw(&v);
+                IUINT32 cc = v.color.ToInt32();
                 framebuffer[x] = cc;
             }
 
@@ -252,5 +267,55 @@ public:
         }
 
         return 2;
+    }
+
+    void DrawTriangle(Vertex *v1, Vertex *v2, Vertex *v3, Matrix matMVP)
+    {
+        Point projPos1 = v1->pos * matMVP;
+        Point projPos2 = v2->pos * matMVP;
+        Point projPos3 = v3->pos * matMVP;
+
+        // todo: check cvv
+        
+        Point scrPos1 = camera.GetScreenPos(&projPos1);
+        Point scrPos2 = camera.GetScreenPos(&projPos2);
+        Point scrPos3 = camera.GetScreenPos(&projPos3);
+
+        v1->pos = scrPos1;
+        v2->pos = scrPos2;
+        v3->pos = scrPos3;
+
+        // 世界/观察空间中呈线性分布的位置，进行投影变换后，会变成非线性分布;
+        //
+        // 由于 w(=-z) 表示了到摄像机的距离
+        // 可以假设在观察空间中，在z值不同(垂直于视线)的平面上，有两条相同长度的线段，
+        //    两条线段的两个顶点的uv/color差都相等，显然pos差(长度))也相等,
+        //    那么这两条线段投影到屏幕空间的长度应该是和z值成反比的,
+        //    所以两条线段两个顶点之间的uv/color/pos差在屏幕空间里的投影做插值时候，
+        //    uv/color/pos对于屏幕空间距离的微分值也和z成反比
+        // 那么假设一个线段的两个顶点z值不同，则该线段投影并变换到到屏幕空间中，
+        //    其uv/color/pos对于屏幕空间距离的微分处处不相等·且和每处的z成反比
+        // 所以这里先把 uv/color/pos 这些在世界/观察空间中线性分布的值除w(即-z)，
+        //    然后再在屏幕空间里做插值，插值操作完成后再乘回w(即-z)，还原回原本正确的值
+
+        v1->ApplyRhw();
+        v2->ApplyRhw();
+        v3->ApplyRhw();
+
+        DrawTriangle2D(v1, v2, v3);
+    }
+
+    void DrawObject(Object *obj)
+    {
+        Matrix matMVP = obj->transform->matModel * camera.matViewProj;
+
+        for (int t = 0; t < obj->triCount; t++)
+        {
+            Vertex v1 = obj->mesh[t];
+            Vertex v2 = obj->mesh[t + 1];
+            Vertex v3 = obj->mesh[t + 2];
+
+            DrawTriangle(&v1, &v2, &v3, matMVP);
+        }
     }
 };
