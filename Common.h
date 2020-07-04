@@ -51,10 +51,20 @@ typedef struct Color
     Color operator*(float m)
     {
         Color c;
-        c.r = this->r *= m;
-        c.g = this->g *= m;
-        c.b = this->b *= m;
-        c.a = this->a *= m;
+        c.r = this->r * m;
+        c.g = this->g * m;
+        c.b = this->b * m;
+        c.a = this->a * m;
+        return c;
+    }
+
+    Color operator/(float m)
+    {
+        Color c;
+        c.r = this->r / m;
+        c.g = this->g / m;
+        c.b = this->b / m;
+        c.a = this->a / m;
         return c;
     }
 
@@ -131,7 +141,7 @@ typedef struct Vertex
 
     void RevertRhw(Vertex *v)
     {
-        v->color = color * pos.w;
+        v->color = color / rhw;
         // v->wPos = wPos * pos.w;
     }
 
