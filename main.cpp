@@ -165,11 +165,44 @@ void screen_update(void)
 // main
 //=====================================================================
 
+static DWORD preTickTime = 0;
+static DWORD curTickTime = 0;
+static DWORD deltaTime = 0.0f;
+static DWORD frameCount = 0;
+
+float UpdateTime()
+{
+    frameCount++;
+    curTickTime = GetTickCount();
+    deltaTime = curTickTime - preTickTime;
+    preTickTime = curTickTime;
+
+    printf("Tick: %u  ", curTickTime);
+}
+
+static float avgDeltaTime = 0.0f;
+static int sampleCount = 10;
+static int dftFrameWeight = 1.0f / (float)sampleCount;
+
+// @deltaTime: ms
+float GetFPS(int deltaTime)
+{
+    float curFrameWeight = frameCount > sampleCount ? dftFrameWeight : 1.0f / (float)frameCount;
+
+    avgDeltaTime = avgDeltaTime * (1 - curFrameWeight) + deltaTime * curFrameWeight;
+
+    float fps = 1.0f / avgDeltaTime * 1000;
+
+    printf("FPS: %f\n", fps);
+    return fps;
+}
+
 void TestDrawPixel(Render *render);
 void TestDrawLine(Render *render);
 void TestDrawScanline(Render *render);
 void TestDrawTriangle2D(Render *render);
 void TestDrawObject(Render *render);
+void TestDrawCube(Render *render);
 
 int main()
 {
@@ -179,17 +212,22 @@ int main()
     screen_init(SCREEN_WIDTH, SCREEN_HEIGHT, title);
 
     Render render = Render(SCREEN_WIDTH, SCREEN_HEIGHT, screen_fb);
-    render.Clear();
 
     // TestDrawPixel(&render);
     // TestDrawScanline(&render);
     // TestDrawLine(&render);
     // TestDrawTriangle2D(&render);
-    TestDrawObject(&render);
 
+    int fps;
     while (screen_exit == 0 && screen_keys[VK_ESCAPE] == 0)
     {
+        render.Clear();
+        TestDrawObject(&render);
         screen_update();
+        // Sleep(100);
+
+        UpdateTime();
+        GetFPS(deltaTime);
     }
 
     return 0;
@@ -247,4 +285,8 @@ void TestDrawObject(Render *render)
     Object obj = Object(data, 18, 3, triangles, 1, transform);
 
     render->DrawObject(&obj);
+}
+
+void TestDrawCube(Render *render)
+{
 }

@@ -971,7 +971,7 @@ static LRESULT screen_events(HWND hWnd, UINT msg,
         break;
     case WM_KEYDOWN:
         screen_keys[wParam & 511] = 1;
-        break;
+        break;+
     case WM_KEYUP:
         screen_keys[wParam & 511] = 0;
         break;
