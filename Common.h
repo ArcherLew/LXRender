@@ -216,7 +216,7 @@ typedef struct Trapezoid
 
         // 根据差值计算当前光栅两头的顶点
         Vertex::Interpolate(&left.v, &left.v1, &left.v2, lt);
-        Vertex::Interpolate(&right.v, &right.v1, &right.v2, lt);
+        Vertex::Interpolate(&right.v, &right.v1, &right.v2, rt);
     }
 
 } Trapezoid;

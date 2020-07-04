@@ -240,7 +240,7 @@ void TestDrawObject(Render *render)
     // 1, -1, 1, 1 - 1, -1, 1, 1 - 1, 1, 1, 1 1, 1, 1, 1 1, -1, -1, 1 - 1, -1, -1, 1 - 1, 1, -1, 1 1, 1, -1, 1
     float *data = new float[18]{
         0.0f, 0.866f, 0.0f, 1.0f, 0.0f, 0.0f,
-        1.0f, -0.866f, 0.0f, 0.0f, 1.0f, 0.0f,
+        1.0f, -0.866f, 1.0f, 0.0f, 1.0f, 0.0f,
         -1.0f, -0.866f, 0.0f, 0.0f, 0.0f, 1.0f};
     std::cout << "data" << sizeof(data) << std::endl;
     int *triangles = new int[3]{0, 1, 2};
