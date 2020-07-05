@@ -11,7 +11,6 @@ public:
 
     Transform()
     {
-        std::cout << "matModel" << sizeof(matModel) << std::endl;
         matModel.SetIdentity(true);
         matTranslate.SetIdentity();
         matRotation.SetIdentity();

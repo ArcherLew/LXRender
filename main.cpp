@@ -30,6 +30,10 @@ void screen_update(void);
 // win32 event handler
 static LRESULT screen_events(HWND, UINT, WPARAM, LPARAM);
 
+bool firstMouse = true;
+int curMouseX, curMouseY, preMouseX, preMouseY;
+void UpdateCameraDir(Camera *camera);
+
 // 查找相关资料了解到 #pragma comment (lib, xxxx) 这种是VS的用法。
 // gcc是不支持这种用法的，gcc是用参数 -lxxx 来引用lib库的，于是在命令行中执行如下语句
 // #ifdef _MSC_VER
@@ -134,6 +138,15 @@ static LRESULT screen_events(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     case WM_KEYUP:
         screen_keys[wParam & 511] = 0;
         break;
+    case WM_MOUSEMOVE:
+        curMouseX = LOWORD(lParam);
+        curMouseY = HIWORD(lParam);
+        // std::cout
+        //     << "wParam = " << wParam
+        //     << ",  x = " << LOWORD(lParam)
+        //     << ",  y = " << HIWORD(lParam)
+        //     << std::endl;
+        break;
     default:
         return DefWindowProc(hWnd, msg, wParam, lParam);
     }
@@ -177,7 +190,7 @@ float UpdateTime()
     deltaTime = curTickTime - preTickTime;
     preTickTime = curTickTime;
 
-    printf("Tick: %u  ", curTickTime);
+    // printf("Tick: %u  ", curTickTime);
 }
 
 static float avgDeltaTime = 0.0f;
@@ -193,8 +206,45 @@ float GetFPS(int deltaTime)
 
     float fps = 1.0f / avgDeltaTime * 1000;
 
-    printf("FPS: %f\n", fps);
+    // printf("FPS: %f\n", fps);
     return fps;
+}
+
+float xOffset, yOffset;
+void UpdateCameraView(Camera *camera)
+{
+    if (screen_keys[0x41]) // A-左
+        camera->MoveX(-0.01f);
+    if (screen_keys[0x44]) // D-右
+        camera->MoveX(0.01f);
+    if (screen_keys[0x57]) // W
+        camera->MoveZ(0.01f);
+    if (screen_keys[0x53]) // S
+        camera->MoveZ(-0.01f);
+    if (screen_keys[0x58]) // X-下
+        camera->MoveY(0.01f);
+    if (screen_keys[VK_SPACE]) // Space-上
+        camera->MoveY(-0.01f); // d3d 屏幕坐标从上到下 Y 从小到大
+
+    if (firstMouse)
+    {
+        preMouseX = curMouseX;
+        preMouseY = curMouseY;
+        firstMouse = false;
+    }
+
+    xOffset = curMouseX - preMouseX;
+    yOffset = curMouseY - preMouseY; // reversed since y-coordinates go from bottom to top
+
+    preMouseX = curMouseX;
+    preMouseY = curMouseY;
+
+    if (xOffset != 0 || yOffset != 0)
+    {
+        camera->MoveYawPitch(xOffset, yOffset);
+    }
+
+    camera->Update();
 }
 
 void TestDrawPixel(Render *render);
@@ -221,6 +271,9 @@ int main()
     int fps;
     while (screen_exit == 0 && screen_keys[VK_ESCAPE] == 0)
     {
+        UpdateCameraView(&render.camera);
+        // UpdateCameraDir(&render.camera);
+
         render.Clear();
         TestDrawObject(&render);
         screen_update();
@@ -280,7 +333,7 @@ void TestDrawObject(Render *render)
         0.0f, 0.866f, 0.0f, 1.0f, 0.0f, 0.0f,
         1.0f, -0.866f, 1.0f, 0.0f, 1.0f, 0.0f,
         -1.0f, -0.866f, 0.0f, 0.0f, 0.0f, 1.0f};
-    std::cout << "data" << sizeof(data) << std::endl;
+    // std::cout << "data" << sizeof(data) << std::endl;
     int *triangles = new int[3]{0, 1, 2};
     Object obj = Object(data, 18, 3, triangles, 1, transform);
 

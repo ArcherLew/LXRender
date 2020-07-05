@@ -25,12 +25,10 @@ typedef struct
 
 class Render
 {
-
-private:
+public:
     Device device;
     Camera camera;
 
-public:
     Render() {}
 
     Render(int width, int height, void *fb)
@@ -53,10 +51,8 @@ public:
 
         // init camera
         Vector camPos = {0.0f, 0.0f, -1.0f, 1.0f};
-        Vector lookAt = {0.0f, 0.0f, 1.0f, 0.0f};
-        Vector up = {0.0f, 1.0f, 0.0f, 0.0f};
         float fov = Math::PI * 0.5f;
-        camera.Init(&camPos, &lookAt, &up, fov, (float)width, (float)height, 1.0f, 500.0f);
+        camera.Init(camPos, 0.0f, 0.0f, fov, (float)width, (float)height, 1.0f, 500.0f);
     }
 
     void Clear()
@@ -180,7 +176,7 @@ public:
         // 逐行光栅化
         for (int j = top; j < bottom; j++)
         {
-            if (j >= 0 && j <= device.height)
+            if (j >= 0 && j < device.height)
             {
                 trap->UpdateEdgeInterpVertex((float)j + 0.5f);
                 scanline.Init(trap->left.v, trap->right.v, j);
@@ -276,7 +272,7 @@ public:
         Point projPos3 = v3->pos * matMVP;
 
         // todo: check cvv
-        
+
         Point scrPos1 = camera.GetScreenPos(&projPos1);
         Point scrPos2 = camera.GetScreenPos(&projPos2);
         Point scrPos3 = camera.GetScreenPos(&projPos3);
