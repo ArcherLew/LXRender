@@ -1,7 +1,9 @@
 # 0702
-- fps
-- input-listener
-- release memory
-- cvv
-- zbuffer
-- texture
+- [x] fps
+- [x] input-listener
+- [ ] release memory
+- [ ] cvv
+- [ ] face cull
+- [x] zbuffer
+- [ ] texture
+- [ ] camera ctor

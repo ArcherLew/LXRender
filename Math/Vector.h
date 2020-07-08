@@ -85,7 +85,7 @@ typedef struct Vector
     // }
     void Print()
     {
-        std::cout << x << y << z << w << std::endl;
+        std::cout << x << "," << y << "," << z << "," << w << std::endl;
     }
 
     static void Sub(Vector *v, const Vector *v1, const Vector *v2)

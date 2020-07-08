@@ -5,7 +5,6 @@
 
 class Camera
 {
-
 public:
     Matrix matViewProj, matView, matProject;
     Point position, front;
@@ -17,7 +16,7 @@ public:
 
     const Point up = {0, 1, 0, 1};
     const float speed = 0.1f;
-    const float sensitivity = 0.05f;
+    const float sensitivity = 1.0f;
 
     Camera()
     {
@@ -26,15 +25,7 @@ public:
         matProject.SetIdentity();
     }
 
-    void Init(
-        Vector _position,
-        float _yaw,
-        float _pitch,
-        float _fov,
-        float _width,
-        float _height,
-        float _near,
-        float _far)
+    void Init(Vector _position, float _yaw, float _pitch, float _fov, float _width, float _height, float _near, float _far)
     {
         position = _position;
         yaw = _yaw;

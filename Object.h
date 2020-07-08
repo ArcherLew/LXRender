@@ -12,26 +12,27 @@ public:
     int verCount;
     int *triangles;
     int triCount;
-    Transform *transform;
+    Transform transform;
     Vertex *mesh;
 
     Object() {}
 
-    Object(
+    void Init(
         float *_data,
         int _dataLength,
         int _verCount,
         int *_triangles,
         int _triCount,
-        Transform _transform)
+        Transform *_transform)
     {
         data = _data;
         dataLength = _dataLength;
         verCount = _verCount;
         triangles = _triangles;
         triCount = _triCount;
-        transform = &_transform;
+        transform = *_transform;
         mesh = new Vertex[_verCount];
+        std::cout << "object.transform add = " << &transform << std ::endl;
 
         int step = dataLength / verCount;
         int p;
@@ -42,6 +43,12 @@ public:
             Color c = {data[p + 3], data[p + 4], data[p + 5], 1.0f};
             mesh[i] = Vertex(v, c, 1.0f);
         }
+
+        // for (int i = 0; i < verCount; i++)
+        // {
+        //     Vertex v = mesh[i];
+        //     v.pos.Print();
+        // }
     }
 };
 

@@ -1,9 +1,12 @@
+#define STB_IMAGE_IMPLEMENTATION
+
 #include <stdlib.h>
 
 #include "Camera.h"
 #include "Common.h"
 #include "Math/Math.h"
-#include "Object.h"
+#include "Scene.h"
+#include "stb_image.h"
 
 // #ifndef GLM_H
 // #define GLM_H
@@ -15,12 +18,114 @@
 //=====================================================================
 // device
 //=====================================================================
-typedef struct
+typedef struct Device
 {
-    int width;             // 窗口宽度
-    int height;            // 窗口高度
+    int width;  // 窗口宽度
+    int height; // 窗口高度
+
     IUINT32 **framebuffer; // 像素缓存：framebuffer[y] 代表第 y行
-    IUINT32 background;    // 背景色
+    float **zbuffer;       // 深度缓存：zbuffer[y] 为第 y行指针
+
+    int render_state;   // 渲染状态
+    IUINT32 background; // 背景色
+    IUINT32 foreground; // 线框颜色
+
+    IUINT32 **texture; // 纹理：同样是每行索引
+    int texWidth;      // 纹理宽度
+    int texHeight;     // 纹理高度
+    int nrChannels;    // 纹理通道
+    float maxU;        // 纹理最大宽度：tex_width - 1
+    float maxV;        // 纹理最大高度：tex_height - 1
+
+    Device() {}
+    Device(int _width, int _height, void *fb)
+    {
+        // init device
+        width = _width;
+        height = _height;
+        background = 0x000000;
+
+        // framebuffer: width * height * int : 颜色缓冲区字节数，每个像素四种颜色 rgba, 每种颜色 0~255
+        // zbuffer : width * height * float : 深度缓冲
+        // todo: framebuffer was memset by fb
+        int bufSize = sizeof(void *) * (height * 2) + width * height * 8;
+
+        // ptr 类型是 char * , 所以 += 的长度增量单位就是 char
+        char *ptr = (char *)malloc(bufSize);
+        framebuffer = (IUINT32 **)ptr;
+        ptr += sizeof(void *) * height;
+
+        zbuffer = (float **)ptr;
+        ptr += sizeof(void *) * height;
+
+        // framebuffer, zbuffer 的行指针
+        char *framebuf, *zbuf;
+        framebuf = (char *)ptr;
+        zbuf = (char *)ptr + width * height * 4;
+
+        if (fb != NULL)
+            framebuf = (char *)fb;
+
+        for (int j = 0; j < height; j++)
+        {
+            framebuffer[j] = (IUINT32 *)(framebuf + width * 4 * j);
+            zbuffer[j] = (float *)(zbuf + width * 4 * j);
+        }
+        ptr += width * height * 8;
+
+        // // todo: ???
+        // texture = (IUINT32 **)ptr;
+        // ptr += sizeof(void *) * 1024;
+        texture = NULL;
+    }
+
+    void LoadTexture(const char *texPath)
+    {
+        stbi_set_flip_vertically_on_load(true);
+        unsigned char *texData = stbi_load(texPath, &texWidth, &texHeight, &nrChannels, 0);
+        if (NULL != texData && nrChannels >= 3 && nrChannels <= 4)
+        {
+            std::cout << "load texture success : " << texPath << std::endl;
+            std::cout << "tex size : " << width << " x " << height << std::endl;
+            std::cout << "channels : " << nrChannels << std::endl;
+            std::cout << "data size : " << sizeof(texData) << std::endl;
+
+            // 定位 texData
+            unsigned char *ptrRaw = texData;
+
+            // 定位 texture
+            char *ptr = (char *)malloc(texWidth * texHeight * nrChannels + texHeight);
+            texture = (IUINT32 **)ptr;
+            ptr += sizeof(void *) * texHeight;
+            int c;
+
+            for (int j = 0; j < texHeight; j++)
+            {
+                texture[j] = (IUINT32 *)(ptr + width * 4 * j);
+                for (int i = 0; i < texWidth; i++)
+                {
+                    ptrRaw += nrChannels;
+                    if (nrChannels == 3)
+                    {
+                        c = *(++ptrRaw) << 24 | *(++ptrRaw) << 16 | *(++ptrRaw) << 8 | 0xff;
+                    }
+                    else if (nrChannels == 4)
+                    {
+                        c = *(++ptrRaw) << 24 | *(++ptrRaw) << 16 | *(++ptrRaw) << 8 | *(++ptrRaw);
+                    }
+                    texture[j][i] = c;
+                }
+            }
+        }
+        else 
+        {
+            if (NULL == texData)
+                std::cout << "Failed to load texture!" << std::endl;
+            if (nrChannels < 3 || nrChannels > 4)
+                std::cout << "NrChannels cannot be decode!" << std::endl;
+        }
+        stbi_image_free(texData);
+    }
 } Device;
 
 class Render
@@ -28,26 +133,13 @@ class Render
 public:
     Device device;
     Camera camera;
+    Matrix matMVP;
 
     Render() {}
 
     Render(int width, int height, void *fb)
     {
-        // init device
-        device.width = width;
-        device.height = height;
-        device.background = 0x000000;
-
-        int need = width * height * 4; // 颜色缓冲区字节数，每个像素四种颜色 rgba, 每种颜色 0~255
-        char *ptr = (char *)malloc(need);
-        device.framebuffer = (IUINT32 **)ptr;
-
-        char *framebuf = (char *)fb;
-
-        for (int j = 0; j < height; j++)
-        {
-            device.framebuffer[j] = (IUINT32 *)(framebuf + width * 4 * j);
-        }
+        device = Device(width, height, fb);
 
         // init camera
         Vector camPos = {0.0f, 0.0f, -1.0f, 1.0f};
@@ -69,6 +161,12 @@ public:
             IUINT32 cc = device.background;
             for (x = device.width; x > 0; dst++, x--) // why dst++ x--
                 dst[0] = cc;
+        }
+        for (y = 0; y < device.height; y++)
+        {
+            float *dst = device.zbuffer[y];
+            for (x = device.width; x > 0; dst++, x--)
+                dst[0] = 0.0f;
         }
     }
 
@@ -147,6 +245,7 @@ public:
     void DrawScanLine(Scanline *scanline)
     {
         IUINT32 *framebuffer = device.framebuffer[scanline->y];
+        float *zbuffer = device.zbuffer[scanline->y];
         int x = scanline->x;
         int w = scanline->w;
         int width = device.width;
@@ -157,11 +256,18 @@ public:
         {
             if (x >= 0 && i < w)
             {
-                scanline->v.RevertRhw(&v);
-                IUINT32 cc = v.color.ToInt32();
-                framebuffer[x] = cc;
-            }
+                float rhw = scanline->v.rhw;
+                float z = zbuffer[x];
+                if (rhw >= z)
+                {
+                    float w = 1.0f / rhw;
+                    zbuffer[x] = rhw;
 
+                    scanline->v.RevertRhw(&v);
+                    IUINT32 cc = v.color.ToInt32();
+                    framebuffer[x] = cc;
+                }
+            }
             scanline->v.Add(&scanline->step);
         }
     }
@@ -273,13 +379,9 @@ public:
 
         // todo: check cvv
 
-        Point scrPos1 = camera.GetScreenPos(&projPos1);
-        Point scrPos2 = camera.GetScreenPos(&projPos2);
-        Point scrPos3 = camera.GetScreenPos(&projPos3);
-
-        v1->pos = scrPos1;
-        v2->pos = scrPos2;
-        v3->pos = scrPos3;
+        v1->pos = camera.GetScreenPos(&projPos1);
+        v2->pos = camera.GetScreenPos(&projPos2);
+        v3->pos = camera.GetScreenPos(&projPos3);
 
         // 世界/观察空间中呈线性分布的位置，进行投影变换后，会变成非线性分布;
         //
@@ -303,13 +405,19 @@ public:
 
     void DrawObject(Object *obj)
     {
-        Matrix matMVP = obj->transform->matModel * camera.matViewProj;
+        Matrix matMVP = obj->transform.matModel * camera.matViewProj;
+        // Matrix::Mul(&matMVP, &obj->transform.matModel, &camera.matViewProj);
+        int t1, t2, t3;
 
         for (int t = 0; t < obj->triCount; t++)
         {
-            Vertex v1 = obj->mesh[t];
-            Vertex v2 = obj->mesh[t + 1];
-            Vertex v3 = obj->mesh[t + 2];
+            t1 = obj->triangles[t * 3];
+            t2 = obj->triangles[t * 3 + 1];
+            t3 = obj->triangles[t * 3 + 2];
+
+            Vertex v1 = obj->mesh[t1];
+            Vertex v2 = obj->mesh[t2];
+            Vertex v3 = obj->mesh[t3];
 
             DrawTriangle(&v1, &v2, &v3, matMVP);
         }

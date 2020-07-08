@@ -211,7 +211,7 @@ typedef struct Trapezoid
         right.v2 = *rv2;
     }
 
-    void SetTopBottom(int t, int b)
+    void SetTopBottom(float t, float b)
     {
         top = t;
         bottom = b;
@@ -223,6 +223,11 @@ typedef struct Trapezoid
         // 计算插值
         float lt = (y - left.v1.pos.y) / (left.v2.pos.y - left.v1.pos.y);
         float rt = (y - right.v1.pos.y) / (right.v2.pos.y - right.v1.pos.y);
+
+        // if (lt > 1.0f || rt > 1.0f || rt < 0.0f || lt < 0.0f)
+        // {
+        //     int i = 9;
+        // }
 
         // 根据差值计算当前光栅两头的顶点
         Vertex::Interpolate(&left.v, &left.v1, &left.v2, lt);

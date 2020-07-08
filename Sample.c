@@ -550,7 +550,7 @@ typedef struct
 #define RENDER_STATE_TEXTURE 2   // 渲染纹理
 #define RENDER_STATE_COLOR 4     // 渲染颜色
 
-// 设备初始化，fb为外部帧缓存，非 NULL 将引用外部帧缓存（每行 4字节对齐）
+// 设备初始化，fb为外部帧缓存，非 NULL 将引用外部帧缓存（每行 4字节对齐）w
 void device_init(device_t *device, int width, int height, void *fb)
 {
     int need = sizeof(void *) * (height * 2 + 1024) + width * height * 8;
@@ -558,11 +558,14 @@ void device_init(device_t *device, int width, int height, void *fb)
     char *framebuf, *zbuf;
     int j;
     assert(ptr);
+
     device->framebuffer = (IUINT32 **)ptr;
     device->zbuffer = (float **)(ptr + sizeof(void *) * height);
     ptr += sizeof(void *) * height * 2;
+
     device->texture = (IUINT32 **)ptr;
-    ptr += sizeof(void *) * 1024;
+    ptr += sizeof(void *) * 1024; // init_texture里生成的纹理数据为 256x256，那么这里可以支持1024/256=4张纹理？
+
     framebuf = (char *)ptr;
     zbuf = (char *)ptr + width * height * 4;
     ptr += width * height * 8;
@@ -573,6 +576,7 @@ void device_init(device_t *device, int width, int height, void *fb)
         device->framebuffer[j] = (IUINT32 *)(framebuf + width * 4 * j);
         device->zbuffer[j] = (float *)(zbuf + width * 4 * j);
     }
+
     device->texture[0] = (IUINT32 *)ptr;
     device->texture[1] = (IUINT32 *)(ptr + 16);
     memset(device->texture[0], 0, 64);
@@ -610,6 +614,21 @@ void device_set_texture(device_t *device, void *bits, long pitch, int w, int h)
     device->tex_height = h;
     device->max_u = (float)(w - 1);
     device->max_v = (float)(h - 1);
+}
+
+void init_texture(device_t *device)
+{
+    static IUINT32 texture[256][256];
+    int i, j;
+    for (j = 0; j < 256; j++)
+    {
+        for (i = 0; i < 256; i++)
+        {
+            int x = i / 32, y = j / 32;
+            texture[j][i] = ((x + y) & 1) ? 0xffffff : 0x3fbcef;
+        }
+    }
+    device_set_texture(device, texture, 256 * 4, 256, 256);
 }
 
 // 清空 framebuffer 和 zbuffer
@@ -1046,20 +1065,6 @@ void camera_at_zero(device_t *device, float x, float y, float z)
     transform_update(&device->transform);
 }
 
-void init_texture(device_t *device)
-{
-    static IUINT32 texture[256][256];
-    int i, j;
-    for (j = 0; j < 256; j++)
-    {
-        for (i = 0; i < 256; i++)
-        {
-            int x = i / 32, y = j / 32;
-            texture[j][i] = ((x + y) & 1) ? 0xffffff : 0x3fbcef;
-        }
-    }
-    device_set_texture(device, texture, 256 * 4, 256, 256);
-}
 
 int main(void)
 {

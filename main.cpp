@@ -34,6 +34,8 @@ bool firstMouse = true;
 int curMouseX, curMouseY, preMouseX, preMouseY;
 void UpdateCameraDir(Camera *camera);
 
+const char *tp_bull = ".\\Res\\bull.jpg";
+
 // 查找相关资料了解到 #pragma comment (lib, xxxx) 这种是VS的用法。
 // gcc是不支持这种用法的，gcc是用参数 -lxxx 来引用lib库的，于是在命令行中执行如下语句
 // #ifdef _MSC_VER
@@ -251,22 +253,32 @@ void TestDrawPixel(Render *render);
 void TestDrawLine(Render *render);
 void TestDrawScanline(Render *render);
 void TestDrawTriangle2D(Render *render);
-void TestDrawObject(Render *render);
-void TestDrawCube(Render *render);
+void GetTestCubeObj(Object *obj);
+void TestLoadTexture(Render *render);
+
+void DrawCall(Render *render, Object *obj)
+{
+    render->DrawObject(obj);
+}
 
 int main()
 {
-    std::cout << "hello world" << std ::endl;
-
     TCHAR *title = _T("LXRender");
     screen_init(SCREEN_WIDTH, SCREEN_HEIGHT, title);
 
     Render render = Render(SCREEN_WIDTH, SCREEN_HEIGHT, screen_fb);
 
+    // TestLoadTexture(&render);
+
     // TestDrawPixel(&render);
     // TestDrawScanline(&render);
     // TestDrawLine(&render);
     // TestDrawTriangle2D(&render);
+    render.Clear();
+    Object obj;
+    GetTestCubeObj(&obj);
+
+    DrawCall(&render, &obj);
 
     int fps;
     while (screen_exit == 0 && screen_keys[VK_ESCAPE] == 0)
@@ -275,7 +287,8 @@ int main()
         // UpdateCameraDir(&render.camera);
 
         render.Clear();
-        TestDrawObject(&render);
+        DrawCall(&render, &obj);
+
         screen_update();
         // Sleep(100);
 
@@ -324,22 +337,41 @@ void TestDrawTriangle2D(Render *render)
     render->DrawTriangle2D(&v1, &v2, &v3);
 }
 
-void TestDrawObject(Render *render)
+float *data = new float[48]{
+    // x    y    z      r     g     b
+    1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+    1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+    -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+    -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+    1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f,
+    1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+    -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 0.0f,
+    -1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f};
+// std::cout << "data" << sizeof(data) << std::endl;
+
+// 逆时针为正面
+int *triangles = new int[36]{
+    0, 2, 1, 0, 3, 2, // back
+    4, 5, 6, 4, 6, 7, // forward
+    1, 2, 5, 2, 6, 5, // top
+    0, 4, 3, 3, 4, 7, // bottom
+    0, 1, 5, 0, 5, 4, // right
+    2, 3, 6, 3, 7, 6  // left
+};
+
+void GetTestCubeObj(Object *obj)
 {
-    Transform transform = Transform();
+    Transform transform;
+    transform.SetTranslate(0.0f, 0.0f, 3.0f);
+    transform.SetScale(1.0f, 1.0f, 1.0f);
+    transform.SetTRS();
+    std::cout << "transform add = " << &transform << std ::endl;
+    std::cout << "transform size = " << sizeof(transform) << std ::endl;
 
-    // 1, -1, 1, 1 - 1, -1, 1, 1 - 1, 1, 1, 1 1, 1, 1, 1 1, -1, -1, 1 - 1, -1, -1, 1 - 1, 1, -1, 1 1, 1, -1, 1
-    float *data = new float[18]{
-        0.0f, 0.866f, 0.0f, 1.0f, 0.0f, 0.0f,
-        1.0f, -0.866f, 1.0f, 0.0f, 1.0f, 0.0f,
-        -1.0f, -0.866f, 0.0f, 0.0f, 0.0f, 1.0f};
-    // std::cout << "data" << sizeof(data) << std::endl;
-    int *triangles = new int[3]{0, 1, 2};
-    Object obj = Object(data, 18, 3, triangles, 1, transform);
-
-    render->DrawObject(&obj);
+    obj->Init(data, 48, 8, triangles, 12, &transform);
 }
 
-void TestDrawCube(Render *render)
+void TestLoadTexture(Render *render)
 {
+    render->device.LoadTexture(tp_bull);
 }

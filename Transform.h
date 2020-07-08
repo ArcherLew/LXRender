@@ -1,17 +1,18 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
-#include <iostream>
 #include "Math/Math.h"
+#include <iostream>
 
 class Transform
 {
 public:
     Matrix matModel, matTranslate, matRotation, matScale;
+    bool needUpdateTRS = false;
 
     Transform()
     {
-        matModel.SetIdentity(true);
+        matModel.SetIdentity();
         matTranslate.SetIdentity();
         matRotation.SetIdentity();
         matScale.SetIdentity();
@@ -21,11 +22,10 @@ public:
     void SetTranslate(float x, float y, float z, bool updateTRS = true)
     {
         matTranslate.SetIdentity();
-        matTranslate.data[0][3] = x;
-        matTranslate.data[1][3] = y;
-        matTranslate.data[2][3] = z;
-        if (updateTRS)
-            SetTRS();
+        matTranslate.data[3][0] = x;
+        matTranslate.data[3][1] = y;
+        matTranslate.data[3][2] = z;
+        needUpdateTRS = true;
     }
 
     void SetScale(float x, float y, float z, bool updateTRS = true)
@@ -34,8 +34,8 @@ public:
         matScale.data[0][0] = x;
         matScale.data[1][1] = y;
         matScale.data[2][2] = z;
-        if (updateTRS)
-            SetTRS();
+
+        needUpdateTRS = true;
     }
 
     // rotate
@@ -63,13 +63,13 @@ public:
         matRotation.data[0][3] = matRotation.data[1][3] = matRotation.data[2][3] = 0.0f;
         matRotation.data[3][3] = 1.0f;
 
-        if (updateTRS)
-            SetTRS();
+        needUpdateTRS = true;
     }
 
     void SetTRS()
     {
-        matModel = matScale * matRotation * matTranslate;
+        if (needUpdateTRS)
+            matModel = matScale * matRotation * matTranslate;
     }
 };
 
