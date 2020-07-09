@@ -23,19 +23,19 @@ typedef struct Device
     int width;  // 窗口宽度
     int height; // 窗口高度
 
-    IUINT32 **framebuffer; // 像素缓存：framebuffer[y] 代表第 y行
-    float **zbuffer;       // 深度缓存：zbuffer[y] 为第 y行指针
+    UINT32 **framebuffer; // 像素缓存：framebuffer[y] 代表第 y行
+    float **zbuffer;      // 深度缓存：zbuffer[y] 为第 y行指针
 
-    int render_state;   // 渲染状态
-    IUINT32 background; // 背景色
-    IUINT32 foreground; // 线框颜色
+    int render_state;  // 渲染状态
+    UINT32 background; // 背景色
+    UINT32 foreground; // 线框颜色
 
-    IUINT32 **texture; // 纹理：同样是每行索引
-    int texWidth;      // 纹理宽度
-    int texHeight;     // 纹理高度
-    int nrChannels;    // 纹理通道
-    float maxU;        // 纹理最大宽度：tex_width - 1
-    float maxV;        // 纹理最大高度：tex_height - 1
+    UINT32 **texture; // 纹理：同样是每行索引
+    int texWidth;     // 纹理宽度
+    int texHeight;    // 纹理高度
+    int nrChannels;   // 纹理通道
+    float maxU;       // 纹理最大宽度：tex_width - 1
+    float maxV;       // 纹理最大高度：tex_height - 1
 
     Device() {}
     Device(int _width, int _height, void *fb)
@@ -52,7 +52,7 @@ typedef struct Device
 
         // ptr 类型是 char * , 所以 += 的长度增量单位就是 char
         char *ptr = (char *)malloc(bufSize);
-        framebuffer = (IUINT32 **)ptr;
+        framebuffer = (UINT32 **)ptr;
         ptr += sizeof(void *) * height;
 
         zbuffer = (float **)ptr;
@@ -68,22 +68,22 @@ typedef struct Device
 
         for (int j = 0; j < height; j++)
         {
-            framebuffer[j] = (IUINT32 *)(framebuf + width * 4 * j);
+            framebuffer[j] = (UINT32 *)(framebuf + width * 4 * j);
             zbuffer[j] = (float *)(zbuf + width * 4 * j);
         }
         ptr += width * height * 8;
 
         // // todo: ???
-        // texture = (IUINT32 **)ptr;
+        // texture = (UINT32 **)ptr;
         // ptr += sizeof(void *) * 1024;
         texture = NULL;
     }
 
     void LoadTexture(const char *texPath)
     {
-        stbi_set_flip_vertically_on_load(true);
+        // stbi_set_flip_vertically_on_load(true); // d3d 应该不需要反转
         unsigned char *texData = stbi_load(texPath, &texWidth, &texHeight, &nrChannels, 0);
-        if (NULL != texData && nrChannels >= 3 && nrChannels <= 4)
+        if (NULL != texData)
         {
             std::cout << "load texture success : " << texPath << std::endl;
             std::cout << "tex size : " << width << " x " << height << std::endl;
@@ -91,40 +91,56 @@ typedef struct Device
             std::cout << "data size : " << sizeof(texData) << std::endl;
 
             // 定位 texData
-            unsigned char *ptrRaw = texData;
+            char *ptrData = (char *)texData;
 
-            // 定位 texture
-            char *ptr = (char *)malloc(texWidth * texHeight * nrChannels + texHeight);
-            texture = (IUINT32 **)ptr;
+            // for (int i = 0; i < 128; i++)
+            // {
+            //     ptrData++;
+            //     std::cout
+            //         << i << " -> " << *ptrData << std::endl;
+            // }
+
+            // 定位 texture v
+            char *ptr = (char *)malloc(texWidth * texHeight * 4 + sizeof(void *) * texHeight);
+            texture = (UINT32 **)ptr;
             ptr += sizeof(void *) * texHeight;
-            int c;
+            UINT32 c;
 
             for (int j = 0; j < texHeight; j++)
             {
-                texture[j] = (IUINT32 *)(ptr + width * 4 * j);
+                texture[j] = (UINT32 *)(ptr + texWidth * 4 * j);
+
                 for (int i = 0; i < texWidth; i++)
                 {
-                    ptrRaw += nrChannels;
                     if (nrChannels == 3)
                     {
-                        c = *(++ptrRaw) << 24 | *(++ptrRaw) << 16 | *(++ptrRaw) << 8 | 0xff;
+                        UCHAR c0 = ptrData[0];
+                        UCHAR c1 = ptrData[1];
+                        UCHAR c2 = ptrData[2];
+                        c = 0xff << 24 | ptrData[0] << 16 | ptrData[1] << 8 | ptrData[2];
                     }
                     else if (nrChannels == 4)
                     {
-                        c = *(++ptrRaw) << 24 | *(++ptrRaw) << 16 | *(++ptrRaw) << 8 | *(++ptrRaw);
+                        c = ptrData[0] << 24 | ptrData[3] << 16 | ptrData[2] << 8 | ptrData[1];
                     }
+                    if (c < 0)
+                        texture[j][i] = 0;
                     texture[j][i] = c;
+
+                    ptrData += nrChannels;
                 }
             }
+
+            if (nrChannels < 3 || nrChannels > 4)
+                std::cout << "NrChannels cannot be decode!" << std::endl;
+
+            stbi_image_free(texData);
         }
-        else 
+        else
         {
             if (NULL == texData)
                 std::cout << "Failed to load texture!" << std::endl;
-            if (nrChannels < 3 || nrChannels > 4)
-                std::cout << "NrChannels cannot be decode!" << std::endl;
         }
-        stbi_image_free(texData);
     }
 } Device;
 
@@ -154,11 +170,11 @@ public:
         // clear frame-buffer
         for (y = 0; y < device.height; y++)
         {
-            IUINT32 *dst = device.framebuffer[y];
-            // IUINT32 cc = (height - 1 - y) * 230 / (height - 1); // lx?: 230 ?
+            UINT32 *dst = device.framebuffer[y];
+            // UINT32 cc = (height - 1 - y) * 230 / (height - 1); // lx?: 230 ?
             // cc = (cc << 16) | (cc << 8) | cc;
             // if (mode == 0)
-            IUINT32 cc = device.background;
+            UINT32 cc = device.background;
             for (x = device.width; x > 0; dst++, x--) // why dst++ x--
                 dst[0] = cc;
         }
@@ -170,14 +186,23 @@ public:
         }
     }
 
+    UINT32 ReadTexture(float u, float v)
+    {
+        // todo: look if need -1
+        int x = (device.texWidth - 1) * u;
+        int y = (device.texHeight - 1) * v;
+        int cc = device.texture[y][x];
+        return cc;
+    }
+
     // 绘制像素点
-    void DrawPixel(int x, int y, IUINT32 c)
+    void DrawPixel(int x, int y, UINT32 c)
     {
         device.framebuffer[y][x] = c;
     }
 
     // 绘制线条
-    void DrawLine(int x1, int y1, int x2, int y2, IUINT32 c)
+    void DrawLine(int x1, int y1, int x2, int y2, UINT32 c)
     {
         int x, y, rem = 0;
 
@@ -244,7 +269,7 @@ public:
     // 绘制光栅线
     void DrawScanLine(Scanline *scanline)
     {
-        IUINT32 *framebuffer = device.framebuffer[scanline->y];
+        UINT32 *framebuffer = device.framebuffer[scanline->y];
         float *zbuffer = device.zbuffer[scanline->y];
         int x = scanline->x;
         int w = scanline->w;
@@ -264,7 +289,9 @@ public:
                     zbuffer[x] = rhw;
 
                     scanline->v.RevertRhw(&v);
-                    IUINT32 cc = v.color.ToInt32();
+
+                    UINT32 cc = ReadTexture(v.tc.u, v.tc.v);
+                    // UINT32 cc = v.color.ToInt32();
                     framebuffer[x] = cc;
                 }
             }

@@ -8,7 +8,8 @@ inline float _Float2Pixel(float f)
     return (int)(f + 0.5f);
 }
 
-typedef unsigned int IUINT32;
+typedef unsigned int UINT32;
+typedef unsigned char UCHAR;
 
 typedef struct Color
 {
@@ -68,7 +69,7 @@ typedef struct Color
         return c;
     }
 
-    IUINT32 ToInt32()
+    UINT32 ToInt32()
     {
         int R = (int)(r * 255.0f);
         int G = (int)(g * 255.0f);
@@ -89,22 +90,79 @@ typedef struct Color
 
 } Color;
 
+typedef struct Texcoord
+{
+    float u, v;
+
+    Texcoord() {}
+
+    Texcoord(float _u, float _v) : u(_u), v(_v) {}
+
+    Texcoord &operator+=(Texcoord &tc)
+    {
+        u += tc.u;
+        v += tc.v;
+        return *this;
+    }
+
+    Texcoord &operator-=(Texcoord &tc)
+    {
+        u -= tc.u;
+        v -= tc.v;
+        return *this;
+    }
+
+    Texcoord &operator*=(float m)
+    {
+        u *= m;
+        v *= m;
+        return *this;
+    }
+
+    Texcoord operator*(float m)
+    {
+        Texcoord tc;
+        tc.u = this->u * m;
+        tc.v = this->v * m;
+        return tc;
+    }
+
+    Texcoord operator/(float m)
+    {
+        Texcoord tc;
+        tc.u = this->u / m;
+        tc.v = this->v / m;
+        return tc;
+    }
+
+    static void Interpolate(Texcoord *tc, Texcoord *tc1, Texcoord *tc2, float t)
+    {
+        tc->u = Math::Interpolate(tc1->u, tc2->u, t);
+        tc->v = Math::Interpolate(tc1->v, tc2->v, t);
+    }
+} Texcoord;
+
 typedef struct Vertex
 {
     Point pos;
     Color color;
+    Texcoord tc;
+
     float rhw;
 
     // Point wPos;
 
     Vertex(){};
 
-    Vertex(Point p, Color c, float r) : pos(p), color(c), rhw(r) {}
+    Vertex(Point p, Color c, float r) : pos(p), color(c), tc({0.0f, 0.0f}), rhw(r) {}
+
+    Vertex(Point p, Color c, Texcoord t, float r) : pos(p), color(c), tc(t), rhw(r) {}
 
     void Add(Vertex *v)
     {
         pos += v->pos;
         color += v->color;
+        tc += v->tc;
         rhw += v->rhw;
 
         // wPos += v->wPos;
@@ -114,6 +172,7 @@ typedef struct Vertex
     {
         pos -= v->pos;
         color -= v->color;
+        tc -= v->tc;
         rhw -= v->rhw;
 
         // wPos -= v->wPos;
@@ -124,6 +183,7 @@ typedef struct Vertex
         float inv = 1 / d;
         pos *= inv;
         color *= inv;
+        tc *= inv;
         rhw *= inv;
 
         // wPos *= inv;
@@ -132,8 +192,7 @@ typedef struct Vertex
     void ApplyRhw()
     {
         rhw = 1.0f / pos.w;
-        // tc.u *= rhw;
-        // tc.v *= rhw;
+        tc *= rhw;
         color *= rhw;
 
         // wPos *= rhw;
@@ -142,6 +201,7 @@ typedef struct Vertex
     void RevertRhw(Vertex *v)
     {
         v->color = color / rhw;
+        v->tc = tc / rhw;
         // v->wPos = wPos * pos.w;
     }
 
@@ -149,6 +209,7 @@ typedef struct Vertex
     {
         Vector::Interpolate(&v->pos, &v1->pos, &v2->pos, t);
         Color::Interpolate(&v->color, &v1->color, &v2->color, t);
+        Texcoord::Interpolate(&v->tc, &v1->tc, &v2->tc, t);
         v->rhw = Math::Interpolate(v1->rhw, v2->rhw, t);
     }
 } Vertex;

@@ -267,18 +267,17 @@ int main()
     screen_init(SCREEN_WIDTH, SCREEN_HEIGHT, title);
 
     Render render = Render(SCREEN_WIDTH, SCREEN_HEIGHT, screen_fb);
+    render.Clear();
 
-    // TestLoadTexture(&render);
-
+    TestLoadTexture(&render);
     // TestDrawPixel(&render);
     // TestDrawScanline(&render);
     // TestDrawLine(&render);
-    // TestDrawTriangle2D(&render);
-    render.Clear();
-    Object obj;
-    GetTestCubeObj(&obj);
+    TestDrawTriangle2D(&render);
 
-    DrawCall(&render, &obj);
+    // Object obj;
+    // GetTestCubeObj(&obj);
+    // DrawCall(&render, &obj);
 
     int fps;
     while (screen_exit == 0 && screen_keys[VK_ESCAPE] == 0)
@@ -286,8 +285,8 @@ int main()
         UpdateCameraView(&render.camera);
         // UpdateCameraDir(&render.camera);
 
-        render.Clear();
-        DrawCall(&render, &obj);
+        // render.Clear();
+        // DrawCall(&render, &obj);
 
         screen_update();
         // Sleep(100);
@@ -303,7 +302,7 @@ void TestDrawPixel(Render *render)
 {
     int x, y;
     Color color = Color(1.0f, 0, 0, 1.0f);
-    IUINT32 c = color.ToInt32();
+    UINT32 c = color.ToInt32();
 
     for (x = 1; x < 100; x++)
         for (y = 1; y < 100; y++)
@@ -331,9 +330,9 @@ void TestDrawScanline(Render *render)
 
 void TestDrawTriangle2D(Render *render)
 {
-    Vertex v1 = Vertex(Point(400, 100, 0, 1), Color(1.0f, 0, 0, 1), 1);
-    Vertex v2 = Vertex(Point(160, 500, 0, 1), Color(0, 1.0f, 0, 1), 1);
-    Vertex v3 = Vertex(Point(640, 500, 0, 1), Color(0, 0, 1.0f, 1), 1);
+    Vertex v1 = Vertex(Point(400, 100, 0, 1), Color(1.0f, 0, 0, 1), Texcoord(0.5f, 0.0f), 1);
+    Vertex v2 = Vertex(Point(160, 500, 0, 1), Color(0, 1.0f, 0, 1), Texcoord(0.0f, 1.0f), 1);
+    Vertex v3 = Vertex(Point(640, 500, 0, 1), Color(0, 0, 1.0f, 1), Texcoord(1.0f, 1.0f), 1);
     render->DrawTriangle2D(&v1, &v2, &v3);
 }
 
