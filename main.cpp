@@ -182,8 +182,13 @@ static DWORD curTickTime = 0;
 static DWORD deltaTime = 0.0f;
 static DWORD frameCount = 0;
 
-float UpdateTime()
+void UpdateTime()
 {
+    if (preTickTime == 0)
+    {
+        preTickTime = GetTickCount();
+        return;
+    }
     frameCount++;
     curTickTime = GetTickCount();
     deltaTime = curTickTime - preTickTime;
@@ -193,19 +198,28 @@ float UpdateTime()
 }
 
 static float avgDeltaTime = 0.0f;
-static int sampleCount = 10;
-static int dftFrameWeight = 1.0f / (float)sampleCount;
-
+static int sampleCount = 100;
+static float dftFrameWeight = 1.0f / (float)sampleCount;
+static int fpsPrintInterval = 0.0f;
 // @deltaTime: ms
-float GetFPS(int deltaTime)
+float GetFPS(float deltaTime)
 {
+    if (frameCount == 0)
+        return 0.0f;
+
     float curFrameWeight = frameCount > sampleCount ? dftFrameWeight : 1.0f / (float)frameCount;
 
     avgDeltaTime = avgDeltaTime * (1 - curFrameWeight) + deltaTime * curFrameWeight;
 
     float fps = 1.0f / avgDeltaTime * 1000;
 
-    // printf("FPS: %f\n", fps);
+    fpsPrintInterval += deltaTime;
+    if (fpsPrintInterval > 1000)
+    {
+        fpsPrintInterval = 0;
+        printf("FPS: %f\n", fps);
+    }
+
     return fps;
 }
 
@@ -241,7 +255,7 @@ void UpdateCameraView(Camera *camera)
 
     if (xOffset != 0 || yOffset != 0)
     {
-        // camera->MoveYawPitch(xOffset, yOffset);
+        camera->MoveYawPitch(xOffset, yOffset);
     }
 
     camera->Update();
@@ -264,13 +278,15 @@ void TestRotateObject(Object *obj)
 {
     // 物体旋转
     if (screen_keys[VK_LEFT])
-        obj->transform.DoRotateX(objRotDeg);
-    if (screen_keys[VK_RIGHT])
-        obj->transform.DoRotateX(-objRotDeg);
-    if (screen_keys[VK_UP])
-        obj->transform.DoRotateY(objRotDeg);
-    if (screen_keys[VK_DOWN])
         obj->transform.DoRotateY(-objRotDeg);
+    if (screen_keys[VK_RIGHT])
+        obj->transform.DoRotateY(objRotDeg);
+    if (screen_keys[VK_UP])
+        obj->transform.DoRotateX(-objRotDeg);
+    if (screen_keys[VK_DOWN])
+        obj->transform.DoRotateX(objRotDeg);
+
+    obj->transform.SetTRS();
 }
 
 int main()
