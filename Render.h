@@ -5,6 +5,8 @@
 #include "Camera.h"
 #include "Common.h"
 #include "Math/Math.h"
+#include "Math/Matrix.h"
+#include "Math/Vector.h"
 #include "Scene.h"
 #include "stb_image.h"
 
@@ -129,7 +131,7 @@ typedef struct Device
 
                     ptrData += nrChannels;
                 }
-            }
+            } 
 
             if (nrChannels < 3 || nrChannels > 4)
                 std::cout << "NrChannels cannot be decode!" << std::endl;
@@ -450,3 +452,4 @@ public:
         }
     }
 };
+

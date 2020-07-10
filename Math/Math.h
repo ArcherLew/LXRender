@@ -1,31 +1,19 @@
-#ifndef MATH_H
-#define MATH_H
+#ifndef LX_MATH_H
+#define LX_MATH_H
+// #pragma once
 
 #include <math.h>
 
 namespace Math
 {
-    const float PI = 3.14159265359f;
-    const float div180 = 1.0f / 180.0f;
+    extern const float PI;
+    extern const float div180;
 
-    int Limit(int x, int min, int max)
-    {
-        return (x < min) ? min : ((x > max) ? max : x);
-    }
+    int Limit(int x, int min, int max);
 
-    float Interpolate(float x1, float x2, float t)
-    {
-        return x1 + (x2 - x1) * t;
-    }
+    float Interpolate(float x1, float x2, float t);
 
-    float Deg2Rad(float deg)
-    {
-        return deg * div180 / PI;
-    }
+    float Deg2Rad(float deg);
 } // namespace Math
 
 #endif
-
-// member access into incomplete type
-#include "Matrix.h"
-#include "Vector.h"

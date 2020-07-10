@@ -32,9 +32,6 @@ static LRESULT screen_events(HWND, UINT, WPARAM, LPARAM);
 
 bool firstMouse = true;
 int curMouseX, curMouseY, preMouseX, preMouseY;
-void UpdateCameraDir(Camera *camera);
-
-const char *tp_bull = ".\\Res\\bull.jpg";
 
 // 查找相关资料了解到 #pragma comment (lib, xxxx) 这种是VS的用法。
 // gcc是不支持这种用法的，gcc是用参数 -lxxx 来引用lib库的，于是在命令行中执行如下语句
@@ -215,6 +212,7 @@ float GetFPS(int deltaTime)
 float xOffset, yOffset;
 void UpdateCameraView(Camera *camera)
 {
+    // 视角移动
     if (screen_keys[0x41]) // A-左
         camera->MoveX(-0.01f);
     if (screen_keys[0x44]) // D-右
@@ -243,22 +241,36 @@ void UpdateCameraView(Camera *camera)
 
     if (xOffset != 0 || yOffset != 0)
     {
-        camera->MoveYawPitch(xOffset, yOffset);
+        // camera->MoveYawPitch(xOffset, yOffset);
     }
 
     camera->Update();
 }
 
-void TestDrawPixel(Render *render);
-void TestDrawLine(Render *render);
-void TestDrawScanline(Render *render);
-void TestDrawTriangle2D(Render *render);
-void GetTestCubeObj(Object *obj);
-void TestLoadTexture(Render *render);
-
 void DrawCall(Render *render, Object *obj)
 {
     render->DrawObject(obj);
+}
+
+void TestLoadTexture(Render *render);
+void TestDrawPixel(Render *render);
+void TestDrawScanline(Render *render);
+void TestDrawLine(Render *render);
+void TestDrawTriangle2D(Render *render);
+void TestGetCubeObj(Object *obj);
+
+float objRotDeg = 0.05f;
+void TestRotateObject(Object *obj)
+{
+    // 物体旋转
+    if (screen_keys[VK_LEFT])
+        obj->transform.DoRotateX(objRotDeg);
+    if (screen_keys[VK_RIGHT])
+        obj->transform.DoRotateX(-objRotDeg);
+    if (screen_keys[VK_UP])
+        obj->transform.DoRotateY(objRotDeg);
+    if (screen_keys[VK_DOWN])
+        obj->transform.DoRotateY(-objRotDeg);
 }
 
 int main()
@@ -273,20 +285,20 @@ int main()
     // TestDrawPixel(&render);
     // TestDrawScanline(&render);
     // TestDrawLine(&render);
-    TestDrawTriangle2D(&render);
+    // TestDrawTriangle2D(&render);
 
-    // Object obj;
-    // GetTestCubeObj(&obj);
-    // DrawCall(&render, &obj);
+    Object obj;
+    TestGetCubeObj(&obj);
+    DrawCall(&render, &obj);
 
     int fps;
     while (screen_exit == 0 && screen_keys[VK_ESCAPE] == 0)
     {
         UpdateCameraView(&render.camera);
-        // UpdateCameraDir(&render.camera);
+        TestRotateObject(&obj);
 
-        // render.Clear();
-        // DrawCall(&render, &obj);
+        render.Clear();
+        DrawCall(&render, &obj);
 
         screen_update();
         // Sleep(100);
@@ -336,30 +348,65 @@ void TestDrawTriangle2D(Render *render)
     render->DrawTriangle2D(&v1, &v2, &v3);
 }
 
-float *data = new float[48]{
-    // x    y    z      r     g     b
-    1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-    1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-    -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
-    -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-    1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f,
-    1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-    -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 0.0f,
-    -1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f};
-// std::cout << "data" << sizeof(data) << std::endl;
-
-// 逆时针为正面
-int *triangles = new int[36]{
-    0, 2, 1, 0, 3, 2, // back
-    4, 5, 6, 4, 6, 7, // forward
-    1, 2, 5, 2, 6, 5, // top
-    0, 4, 3, 3, 4, 7, // bottom
-    0, 1, 5, 0, 5, 4, // right
-    2, 3, 6, 3, 7, 6  // left
-};
-
-void GetTestCubeObj(Object *obj)
+void TestLoadTexture(Render *render)
 {
+    static char *texPath = ".\\Res\\bull.jpg";
+    render->device.LoadTexture(texPath);
+}
+
+void TestGetCubeObj(Object *obj)
+{
+    static float *data = new float[192]{
+        // {x, y, z} {r, g, b} {u, v}
+
+        // back: 0123
+        1.0f, -1.0f, 1.0f, 1.0f, 0.7f, 0.7f, 1.0f, 1.0f,  // 0[0]
+        1.0f, 1.0f, 1.0f, 1.0f, 0.7f, 0.7f, 1.0f, 0.0f,   // 1[1]
+        -1.0f, 1.0f, 1.0f, 1.0f, 0.7f, 0.7f, 0.0f, 0.0f,  // 2[2]
+        -1.0f, -1.0f, 1.0f, 1.0f, 0.7f, 0.7f, 0.0f, 1.0f, // 3[3]
+
+        // forward: 4567
+        1.0f, -1.0f, -1.0f, 0.7f, 1.0f, 0.7f, 1.0f, 1.0f,  // 4[4]
+        1.0f, 1.0f, -1.0f, 0.7f, 1.0f, 0.7f, 1.0f, 0.0f,   // 5[5]
+        -1.0f, 1.0f, -1.0f, 0.7f, 1.0f, 0.7f, 0.0f, 0.0f,  // 6[6]
+        -1.0f, -1.0f, -1.0f, 0.7f, 1.0f, 0.7f, 0.0f, 1.0f, // 7[7]
+
+        // top: 1256
+        1.0f, 1.0f, 1.0f, 0.7f, 0.7f, 1.0f, 1.0f, 0.0f,   // 1[8]
+        -1.0f, 1.0f, 1.0f, 0.7f, 0.7f, 1.0f, 0.0f, 0.0f,  // 2[9]
+        1.0f, 1.0f, -1.0f, 0.7f, 0.7f, 1.0f, 1.0f, 1.0f,  // 5[10]
+        -1.0f, 1.0f, -1.0f, 0.7f, 0.7f, 1.0f, 0.0f, 1.0f, // 6[11]
+
+        // bottom: 0347
+        1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 0.7f, 1.0f, 1.0f,   // 0[12]
+        -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 0.7f, 0.0f, 1.0f,  // 3[13]
+        1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 0.7f, 1.0f, 0.0f,  // 4[14]
+        -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 0.7f, 0.0f, 0.0f, // 7[15]
+
+        // left: 2367
+        -1.0f, 1.0f, 1.0f, 0.7f, 1.0f, 1.0f, 0.0f, 0.0f,   // 2[16]
+        -1.0f, -1.0f, 1.0f, 0.7f, 1.0f, 1.0f, 1.0f, 0.0f,  // 3[17]
+        -1.0f, 1.0f, -1.0f, 0.7f, 1.0f, 1.0f, 0.0f, 1.0f,  // 6[18]
+        -1.0f, -1.0f, -1.0f, 0.7f, 1.0f, 1.0f, 1.0f, 1.0f, // 7[19]
+
+        // right: 0145
+        1.0f, -1.0f, 1.0f, 1.0f, 0.7f, 1.0f, 1.0f, 1.0f,  // 0[20]
+        1.0f, 1.0f, 1.0f, 1.0f, 0.7f, 1.0f, 1.0f, 0.0f,   // 1[21]
+        1.0f, -1.0f, -1.0f, 1.0f, 0.7f, 1.0f, 0.0f, 1.0f, // 4[22]
+        1.0f, 1.0f, -1.0f, 1.0f, 0.7f, 1.0f, 0.0f, 0.0f,  // 5[23]
+
+    };
+
+    // 逆时针为正面
+    static int *triangles = new int[36]{
+        0, 2, 1, 0, 3, 2,       // back
+        4, 5, 6, 4, 6, 7,       // forward
+        8, 9, 10, 9, 11, 10,    // top
+        12, 14, 13, 13, 14, 15, // bottom
+        16, 17, 18, 17, 19, 18, // right
+        20, 21, 23, 20, 23, 22  // left
+    };
+
     Transform transform;
     transform.SetTranslate(0.0f, 0.0f, 3.0f);
     transform.SetScale(1.0f, 1.0f, 1.0f);
@@ -367,10 +414,5 @@ void GetTestCubeObj(Object *obj)
     std::cout << "transform add = " << &transform << std ::endl;
     std::cout << "transform size = " << sizeof(transform) << std ::endl;
 
-    obj->Init(data, 48, 8, triangles, 12, &transform);
-}
-
-void TestLoadTexture(Render *render)
-{
-    render->device.LoadTexture(tp_bull);
+    obj->Init(data, 192, 24, triangles, 12, &transform);
 }

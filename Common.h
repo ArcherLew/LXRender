@@ -1,4 +1,6 @@
 #include "Math/Math.h"
+#include "Math/Matrix.h"
+#include "Math/Vector.h"
 
 #ifndef COMMON_H
 #define COMMON_H

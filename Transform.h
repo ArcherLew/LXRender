@@ -2,12 +2,16 @@
 #define TRANSFORM_H
 
 #include "Math/Math.h"
+#include "Math/Matrix.h"
+#include "Math/Vector.h"
 #include <iostream>
 
 class Transform
 {
 public:
     Matrix matModel, matTranslate, matRotation, matScale;
+    Matrix matCurRot;
+
     bool needUpdateTRS = false;
 
     Transform()
@@ -42,27 +46,29 @@ public:
     // 四元数构造
     void SetRotate(float x, float y, float z, float theta, bool updateTRS = true)
     {
-        float qsin = (float)sin(theta * 0.5f);
-        float qcos = (float)cos(theta * 0.5f);
-        Vector vec = {x, y, z, 1.0f};
-        float w = qcos;
-        vec.Normalize();
-        x = vec.x * qsin;
-        y = vec.y * qsin;
-        z = vec.z * qsin;
-        matRotation.data[0][0] = 1 - 2 * y * y - 2 * z * z;
-        matRotation.data[0][1] = 2 * x * y - 2 * w * z;
-        matRotation.data[0][2] = 2 * x * z + 2 * w * y;
-        matRotation.data[1][0] = 2 * x * y + 2 * w * z;
-        matRotation.data[1][1] = 1 - 2 * x * x - 2 * z * z;
-        matRotation.data[1][2] = 2 * y * z - 2 * w * x;
-        matRotation.data[2][0] = 2 * x * z - 2 * w * y;
-        matRotation.data[2][1] = 2 * y * z + 2 * w * x;
-        matRotation.data[2][2] = 1 - 2 * x * x - 2 * y * y;
-        matRotation.data[3][0] = matRotation.data[3][1] = matRotation.data[3][2] = 0.0f;
-        matRotation.data[0][3] = matRotation.data[1][3] = matRotation.data[2][3] = 0.0f;
-        matRotation.data[3][3] = 1.0f;
+        Matrix::GetRotateMatrix(&matRotation, x, y, z, theta);
+        needUpdateTRS = true;
+    }
 
+    // 基于当前状态，绕世界空间某个轴旋转
+    void DoRotateX(float dx)
+    {
+        Matrix::GetRotateMatrix(&matCurRot, 1.0f, 0.0f, 0.0f, dx);
+        matRotation = matRotation * matCurRot;
+        needUpdateTRS = true;
+    }
+
+    void DoRotateY(float dy)
+    {
+        Matrix::GetRotateMatrix(&matCurRot, 0.0f, 1.0f, 0.0f, dy);
+        matRotation = matRotation * matCurRot;
+        needUpdateTRS = true;
+    }
+
+    void DoRotateZ(float dz)
+    {
+        Matrix::GetRotateMatrix(&matCurRot, 0.0f, 0.0f, 1.0f, dz);
+        matRotation = matRotation * matCurRot;
         needUpdateTRS = true;
     }
 

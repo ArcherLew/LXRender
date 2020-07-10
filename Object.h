@@ -41,7 +41,8 @@ public:
             p = i * step;
             Vector v = {data[p], data[p + 1], data[p + 2], 1.0f}; // w 后面再算
             Color c = {data[p + 3], data[p + 4], data[p + 5], 1.0f};
-            mesh[i] = Vertex(v, c, 1.0f);
+            Texcoord tc = {data[p + 6], data[p + 7]};
+            mesh[i] = Vertex(v, c, tc, 1.0f);
         }
 
         // for (int i = 0; i < verCount; i++)

@@ -1,4 +1,4 @@
-# 0702
+# todo
 - [x] fps
 - [x] input-listener
 - [ ] release memory
@@ -7,3 +7,6 @@
 - [x] zbuffer
 - [ ] texture
 - [ ] camera ctor
+
+# bugs
+- rotate camera cause uv calculate wrong

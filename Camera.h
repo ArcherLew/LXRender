@@ -2,6 +2,8 @@
 #define CAMERA_H
 
 #include "Math/Math.h"
+#include "Math/Matrix.h"
+#include "Math/Vector.h"
 
 class Camera
 {
