@@ -345,12 +345,12 @@ void TestDrawLine(Render *render)
 
 void TestDrawScanline(Render *render)
 {
-    Vertex step = Vertex(Point(1, 0, 0, 1), Color(-0.005f, 0, 0, 0), 1);
+    Vertex step = Vertex(Vector(1, 0, 0, 1), Color(-0.005f, 0, 0, 0), 1);
 
     int y;
     for (y = 1; y < 100; y++)
     {
-        Vertex v = Vertex(Point(100, y, 0, 1), Color(1.0f, 0, 0, 1), 1);
+        Vertex v = Vertex(Vector(100, y, 0, 1), Color(1.0f, 0, 0, 1), 1);
         Scanline scanline = Scanline(v, step, 100, y, 200);
         render->DrawScanLine(&scanline);
     }
@@ -358,9 +358,9 @@ void TestDrawScanline(Render *render)
 
 void TestDrawTriangle2D(Render *render)
 {
-    Vertex v1 = Vertex(Point(400, 100, 0, 1), Color(1.0f, 0, 0, 1), Texcoord(0.5f, 0.0f), 1);
-    Vertex v2 = Vertex(Point(160, 500, 0, 1), Color(0, 1.0f, 0, 1), Texcoord(0.0f, 1.0f), 1);
-    Vertex v3 = Vertex(Point(640, 500, 0, 1), Color(0, 0, 1.0f, 1), Texcoord(1.0f, 1.0f), 1);
+    Vertex v1 = Vertex(Vector(400, 100, 0, 1), Color(1.0f, 0, 0, 1), Texcoord(0.5f, 0.0f), 1);
+    Vertex v2 = Vertex(Vector(160, 500, 0, 1), Color(0, 1.0f, 0, 1), Texcoord(0.0f, 1.0f), 1);
+    Vertex v3 = Vertex(Vector(640, 500, 0, 1), Color(0, 0, 1.0f, 1), Texcoord(1.0f, 1.0f), 1);
     render->DrawTriangle2D(&v1, &v2, &v3);
 }
 
@@ -415,12 +415,12 @@ void TestGetCubeObj(Object *obj)
 
     // 逆时针为正面
     static int *triangles = new int[36]{
-        0, 2, 1, 0, 3, 2,       // back
-        4, 5, 6, 4, 6, 7,       // forward
-        8, 9, 10, 9, 11, 10,    // top
-        12, 14, 13, 13, 14, 15, // bottom
-        16, 17, 18, 17, 19, 18, // right
-        20, 21, 23, 20, 23, 22  // left
+        0, 1, 2, 0, 2, 3,       // back
+        4, 6, 5, 4, 7, 6,       // forward
+        8, 10, 9, 9, 10, 11,    // top
+        12, 13, 14, 13, 15, 14, // bottom
+        16, 18, 17, 17, 18, 19, // right
+        20, 23, 21, 20, 22, 23  // left
     };
 
     Transform transform;

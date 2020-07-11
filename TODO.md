@@ -1,12 +1,13 @@
 # todo
 - [x] fps
 - [x] input-listener
-- [ ] release memory
-- [ ] cvv
+- [ ] memory
+- [x] cvv
 - [ ] face cull
 - [x] zbuffer
-- [ ] texture
-- [ ] camera ctor
+- [x] texture
+- [ ] shader
+- [ ] lighting
 
 # bugs
 - rotate camera cause uv calculate wrong

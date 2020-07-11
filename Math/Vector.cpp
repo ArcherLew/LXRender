@@ -10,7 +10,7 @@ Vector &Vector::operator+=(const Vector &v)
     return *this;
 }
 
-Vector &Vector ::operator-=(const Vector &v)
+Vector &Vector::operator-=(const Vector &v)
 {
     x -= v.x;
     y -= v.y;
@@ -44,6 +44,14 @@ Vector Vector::operator*(float f)
     v.x = this->x * f;
     v.y = this->y * f;
     v.z = this->z * f;
+    return v;
+}
+Vector Vector ::operator-(Vector &v2)
+{
+    Vector v;
+    v.x = this->x - v2.x;
+    v.y = this->y - v2.y;
+    v.z = this->z - v2.z;
     return v;
 }
 
@@ -91,7 +99,7 @@ float Vector::Dot(const Vector *v1, const Vector *v2)
     return v1->x * v2->x + v1->y * v2->y + v1->z * v2->z;
 }
 
-void Vector::Cross(Vector *v, const Vector *v1, const Vector *v2)
+void Vector::Cross(Vector *v, Vector *v1, Vector *v2)
 {
     v->x = v1->y * v2->z - v1->z * v2->y;
     v->y = v1->z * v2->x - v1->x * v2->z;

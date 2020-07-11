@@ -9,14 +9,14 @@ class Camera
 {
 public:
     Matrix matViewProj, matView, matProject;
-    Point position, front;
+    Vector position, front;
     float yaw, pitch;
     float width, height, aspect, fov, zNear, zFar;
 
     bool needUpdateView = false;
     bool needUpdateProjection = false;
 
-    const Point up = {0, 1, 0, 1};
+    Vector up = {0, 1, 0, 1};
     const float speed = 0.1f;
     const float sensitivity = 1.0f;
 
@@ -42,12 +42,12 @@ public:
         Update(true);
     }
 
-    Point GetFront()
+    Vector GetFront()
     {
         front.x = sin(Math::Deg2Rad(yaw)) * cos(Math::Deg2Rad(pitch));
         front.y = sin(Math::Deg2Rad(pitch));
         front.z = cos(Math::Deg2Rad(yaw)) * cos(Math::Deg2Rad(pitch));
-        front.w = 0.0f;
+        front.w = 1.0f;
         front.Normalize();
         return front;
     }
@@ -160,18 +160,6 @@ public:
     void MoveZ(float dz)
     {
         position.z += dz;
-        needUpdateView = true;
-    }
-
-    void RotateH(float dh)
-    {
-        yaw += dh;
-        needUpdateView = true;
-    }
-
-    void RotateV(float dv)
-    {
-        pitch += dv;
         needUpdateView = true;
     }
 

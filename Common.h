@@ -146,19 +146,21 @@ typedef struct Texcoord
 
 typedef struct Vertex
 {
-    Point pos;
+    Vector pos;
+    Vector wPos;
     Color color;
     Texcoord tc;
+    Vector normal;
 
     float rhw;
 
-    // Point wPos;
+    // Vector wPos;
 
     Vertex(){};
 
-    Vertex(Point p, Color c, float r) : pos(p), color(c), tc({0.0f, 0.0f}), rhw(r) {}
+    Vertex(Vector p, Color c, float r) : pos(p), color(c), tc({0.0f, 0.0f}), rhw(r) {}
 
-    Vertex(Point p, Color c, Texcoord t, float r) : pos(p), color(c), tc(t), rhw(r) {}
+    Vertex(Vector p, Color c, Texcoord t, float r) : pos(p), color(c), tc(t), rhw(r) {}
 
     void Add(Vertex *v)
     {

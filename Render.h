@@ -131,7 +131,7 @@ typedef struct Device
 
                     ptrData += nrChannels;
                 }
-            } 
+            }
 
             if (nrChannels < 3 || nrChannels > 4)
                 std::cout << "NrChannels cannot be decode!" << std::endl;
@@ -195,6 +195,25 @@ public:
         int y = (device.texHeight - 1) * v;
         int cc = device.texture[y][x];
         return cc;
+    }
+
+    int CVVClip(const Vector *v)
+    {
+        float w = v->w;
+        int check = 0;
+        if (v->z < 0.0f)
+            check |= 1;
+        if (v->z > w)
+            check |= 2;
+        if (v->x < -w)
+            check |= 4;
+        if (v->x > w)
+            check |= 8;
+        if (v->y < -w)
+            check |= 16;
+        if (v->y > w)
+            check |= 32;
+        return check;
     }
 
     // 绘制像素点
@@ -368,7 +387,6 @@ public:
             trap[0].SetEdge(p1, p3, p2, p3);
             return (trap[0].top < trap[0].bottom) ? 1 : 0;
         }
-
         // 正三角形
         if (p2->pos.y == p3->pos.y)
         {
@@ -400,13 +418,19 @@ public:
         return 2;
     }
 
-    void DrawTriangle(Vertex *v1, Vertex *v2, Vertex *v3, Matrix matMVP)
+    void DrawTriangle(Vertex *v1, Vertex *v2, Vertex *v3, Matrix matViewProj)
     {
-        Point projPos1 = v1->pos * matMVP;
-        Point projPos2 = v2->pos * matMVP;
-        Point projPos3 = v3->pos * matMVP;
+        Vector projPos1 = v1->wPos * matViewProj;
+        Vector projPos2 = v2->wPos * matViewProj;
+        Vector projPos3 = v3->wPos * matViewProj;
 
         // todo: check cvv
+        if (CVVClip(&projPos1) != 0)
+            return;
+        if (CVVClip(&projPos2) != 0)
+            return;
+        if (CVVClip(&projPos3) != 0)
+            return;
 
         v1->pos = camera.GetScreenPos(&projPos1);
         v2->pos = camera.GetScreenPos(&projPos2);
@@ -434,7 +458,7 @@ public:
 
     void DrawObject(Object *obj)
     {
-        Matrix matMVP = obj->transform.matModel * camera.matViewProj;
+        // Matrix matMVP = obj->transform.matModel * camera.matViewProj;
         // Matrix::Mul(&matMVP, &obj->transform.matModel, &camera.matViewProj);
         int t1, t2, t3;
 
@@ -448,8 +472,33 @@ public:
             Vertex v2 = obj->mesh[t2];
             Vertex v3 = obj->mesh[t3];
 
-            DrawTriangle(&v1, &v2, &v3, matMVP);
+            // todo: opt
+            v1.wPos = v1.pos * obj->transform.matModel;
+            v2.wPos = v2.pos * obj->transform.matModel;
+            v3.wPos = v3.pos * obj->transform.matModel;
+
+            Vector normal;
+            Vector v12 = v2.wPos - v1.wPos;
+            Vector v23 = v3.wPos - v2.wPos;
+            Vector::Cross(&normal, &v12, &v23);
+
+            Vector viewDir = v1.wPos - camera.position;
+            if (Vector::Dot(&normal, &viewDir) >= 0)
+                continue;
+
+            v1.normal = normal;
+            v2.normal = normal;
+            v3.normal = normal;
+
+            DrawTriangle(&v1, &v2, &v3, camera.matViewProj);
         }
     }
-};
 
+    void VertexShader(Vertex *v)
+    {
+    }
+
+    void FragmentShader()
+    {
+    }
+};

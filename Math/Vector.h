@@ -26,6 +26,8 @@ public:
 
     Vector operator*(float f);
 
+    Vector operator-(Vector &v2);
+
     float Length();
 
     void Normalize();
@@ -36,11 +38,9 @@ public:
 
     static float Dot(const Vector *v1, const Vector *v2);
 
-    static void Cross(Vector *v, const Vector *v1, const Vector *v2);
+    static void Cross(Vector *v, Vector *v1, Vector *v2);
 
     static void Interpolate(Vector *v, Vector *v1, Vector *v2, float t);
 };
-
-typedef Vector Point;
 
 // #endif
