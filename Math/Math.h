@@ -10,6 +10,7 @@ namespace Math
     extern const float div180;
 
     int Limit(int x, int min, int max);
+    float Limit(float x, float min, float max);
 
     float Interpolate(float x1, float x2, float t);
 

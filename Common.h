@@ -90,6 +90,16 @@ typedef struct Color
         c->a = Math::Interpolate(c1->a, c2->a, t);
     }
 
+    static UINT32 Mul(UINT32 cc, float f)
+    {
+        UCHAR a = cc >> 24;
+        UCHAR r = ((cc & 0x00ff0000) >> 16) * f;
+        UCHAR g = ((cc & 0x0000ff00) >> 8) * f;
+        UCHAR b = (cc & 0x000000ff) * f;
+        UINT32 c = a << 24 | r << 16 | g << 8 | b;
+        return c;
+    }
+
 } Color;
 
 typedef struct Texcoord
@@ -148,10 +158,9 @@ typedef struct Vertex
 {
     Vector pos;
     Vector wPos;
+    Vector normal;
     Color color;
     Texcoord tc;
-    Vector normal;
-
     float rhw;
 
     // Vector wPos;
@@ -165,6 +174,8 @@ typedef struct Vertex
     void Add(Vertex *v)
     {
         pos += v->pos;
+        wPos += v->wPos;
+        normal += v->normal;
         color += v->color;
         tc += v->tc;
         rhw += v->rhw;
@@ -175,6 +186,8 @@ typedef struct Vertex
     void Sub(Vertex *v)
     {
         pos -= v->pos;
+        wPos -= v->wPos;
+        normal -= v->normal;
         color -= v->color;
         tc -= v->tc;
         rhw -= v->rhw;
@@ -186,6 +199,8 @@ typedef struct Vertex
     {
         float inv = 1 / d;
         pos *= inv;
+        wPos *= inv;
+        normal *= inv;
         color *= inv;
         tc *= inv;
         rhw *= inv;
@@ -196,24 +211,28 @@ typedef struct Vertex
     void ApplyRhw()
     {
         rhw = 1.0f / pos.w;
+
         tc *= rhw;
         color *= rhw;
-
-        // wPos *= rhw;
+        wPos *= rhw;
+        // normal *= rhw;
     }
 
     void RevertRhw(Vertex *v)
     {
         v->color = color / rhw;
         v->tc = tc / rhw;
-        // v->wPos = wPos * pos.w;
+        v->wPos = wPos / rhw;
+        v->normal = normal;
     }
 
     static void Interpolate(Vertex *v, Vertex *v1, Vertex *v2, float t)
     {
         Vector::Interpolate(&v->pos, &v1->pos, &v2->pos, t);
+        Vector::Interpolate(&v->wPos, &v1->wPos, &v2->wPos, t);
         Color::Interpolate(&v->color, &v1->color, &v2->color, t);
         Texcoord::Interpolate(&v->tc, &v1->tc, &v2->tc, t);
+        v->normal = v1->normal;
         v->rhw = Math::Interpolate(v1->rhw, v2->rhw, t);
     }
 } Vertex;

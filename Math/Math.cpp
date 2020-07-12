@@ -9,6 +9,11 @@ int Math::Limit(int x, int min, int max)
     return (x < min) ? min : ((x > max) ? max : x);
 }
 
+float Math::Limit(float x, float min, float max)
+{
+    return (x < min) ? min : ((x > max) ? max : x);
+}
+
 float Math::Interpolate(float x1, float x2, float t)
 {
     return x1 + (x2 - x1) * t;

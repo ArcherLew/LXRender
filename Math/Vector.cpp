@@ -46,6 +46,16 @@ Vector Vector::operator*(float f)
     v.z = this->z * f;
     return v;
 }
+
+Vector Vector::operator/(float f)
+{
+    Vector v;
+    v.x = this->x / f;
+    v.y = this->y / f;
+    v.z = this->z / f;
+    return v;
+}
+
 Vector Vector ::operator-(Vector &v2)
 {
     Vector v;

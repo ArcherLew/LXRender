@@ -152,6 +152,9 @@ public:
     Device device;
     Camera camera;
     Matrix matMVP;
+    Vector dLight;
+    Vector *pLights;
+    int pLightsCount;
 
     Render() {}
 
@@ -163,6 +166,8 @@ public:
         Vector camPos = {0.0f, 0.0f, -1.0f, 1.0f};
         float fov = Math::PI * 0.5f;
         camera.Init(camPos, 0.0f, 0.0f, fov, (float)width, (float)height, 1.0f, 500.0f);
+
+        dLight = Vector(0.57735f, 0.57735f, 0.57735f, 0.0f);
     }
 
     void Clear()
@@ -311,7 +316,7 @@ public:
 
                     scanline->v.RevertRhw(&v);
 
-                    UINT32 cc = ReadTexture(v.tc.u, v.tc.v);
+                    UINT32 cc = FragmentShader(&v);
                     // UINT32 cc = v.color.ToInt32();
                     framebuffer[x] = cc;
                 }
@@ -486,6 +491,7 @@ public:
             if (Vector::Dot(&normal, &viewDir) >= 0)
                 continue;
 
+            normal.Normalize();
             v1.normal = normal;
             v2.normal = normal;
             v3.normal = normal;
@@ -494,11 +500,21 @@ public:
         }
     }
 
-    void VertexShader(Vertex *v)
+    UINT32 FragmentShader(Vertex *v2f)
     {
-    }
-
-    void FragmentShader()
-    {
+        UINT32 color = ReadTexture(v2f->tc.u, v2f->tc.v);
+        Vector _viewDir = camera.position - v2f->wPos;
+        _viewDir.Normalize();
+        Vector h = _viewDir - dLight;
+        h.Normalize();
+        v2f->normal.Normalize();
+        float ambient = 0.05f;
+        float diffuse = Vector::Dot(&dLight, &v2f->normal);
+        diffuse = Math::Limit(diffuse, 0.0f, 1.0f) * 0.5f;
+        float specular = Vector::Dot(&h, &v2f->normal);
+        specular = Math::Limit(specular, 0.0f, 1.0f) * 0.5f;
+        float factor = ambient + specular + diffuse;
+        color = Color::Mul(color, factor);
+        return color;
     }
 };

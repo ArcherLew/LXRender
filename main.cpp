@@ -255,7 +255,7 @@ void UpdateCameraView(Camera *camera)
 
     if (xOffset != 0 || yOffset != 0)
     {
-        camera->MoveYawPitch(xOffset, yOffset);
+        // camera->MoveYawPitch(xOffset, yOffset);
     }
 
     camera->Update();

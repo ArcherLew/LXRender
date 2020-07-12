@@ -26,6 +26,8 @@ public:
 
     Vector operator*(float f);
 
+    Vector operator/(float f);
+
     Vector operator-(Vector &v2);
 
     float Length();
